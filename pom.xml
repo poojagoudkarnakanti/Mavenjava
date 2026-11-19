@@ -26,3 +26,376 @@
     <finalName>MavenWeb</finalName>
   </build>
 </project>
+=================
+# WEEK 8 – JENKINS AUTOMATION
+## I. MAVEN JAVA AUTOMATION
+
+**Objective:** Automate a Maven Java project using Jenkins with Build and Test jobs.
+
+### Prerequisites
+1. Start Jenkins: `http://localhost:8080`
+2. Ensure Git and Maven are installed.
+3. In Jenkins, configure Maven under **Manage Jenkins → Tools → Maven installations**.
+4. Give Maven name as `MAVEN_HOME`.
+
+### Step 1: Create MavenJava_Build Job
+1. Open Jenkins → Click **New Item**.
+2. Enter name: `MavenJava_Build`.
+3. Select **Freestyle project** → Click OK.
+4. Description: Java Build demo.
+5. Source Code Management → Select Git.
+6. Enter GitHub repository URL.
+7. Branch: `*/main` or `*/master` (according to your repository).
+8. Build Steps:
+   - Add Build Step → Invoke top-level Maven targets.
+   - Maven Version: `MAVEN_HOME`.
+   - Goals: `clean`.
+   - Add another Maven build step.
+   - Goals: `install`.
+9. Post-build Actions:
+   - Archive the artifacts → `target/*.jar` (adjust according to project).
+   - Build other projects → `MavenJava_Test`.
+   - Trigger only if build is stable.
+10. Click **Apply → Save**.
+
+### Step 2: Create MavenJava_Test Job
+1. Click New Item → Enter `MavenJava_Test`.
+2. Select Freestyle project → OK.
+3. Description: Test demo.
+4. Build Environment → Check **Delete the workspace before build starts**.
+5. Build Steps:
+   - Add Build Step → Copy artifacts from another project.
+   - Project name: `MavenJava_Build`.
+   - Build: Stable build only.
+   - Artifacts to copy: `target/*.jar`.
+   - Add Build Step → Invoke top-level Maven targets.
+   - Maven Version: `MAVEN_HOME`.
+   - Goals: `test`.
+6. Post-build Actions:
+   - Archive artifacts: `target/surefire-reports/*.xml` (if generated).
+7. Click Apply → Save.
+
+### Step 3: Create MavenJava_Pipeline View
+1. Go to Jenkins Dashboard.
+2. Click `+` beside All.
+3. Enter name: `MavenJava_Pipeline`.
+4. Select **Build Pipeline View**.
+5. Click OK/Create.
+6. Layout: Based on upstream/downstream relationship.
+7. Initial Job: `MavenJava_Build`.
+8. Click Apply → Save.
+
+### Step 4: Run and Verify
+1. Open MavenJava_Pipeline.
+2. Click Run/Build on `MavenJava_Build`.
+3. Open Console Output.
+4. Check for `BUILD SUCCESS`.
+5. MavenJava_Test should automatically execute.
+6. Verify both jobs are green.
+7. Check archived artifacts.
+
+---
+
+## II. MAVEN WEB AUTOMATION
+
+**Objective:** Automate a Maven Web application using Jenkins and deploy it to Tomcat.
+
+### Step 1: Create MavenWeb_Build Job
+1. Jenkins Dashboard → New Item.
+2. Name: `MavenWeb_Build`.
+3. Select Freestyle project → OK.
+4. Description: Web Build demo.
+5. Source Code Management → Git.
+6. Enter GitHub Maven Web repository URL.
+7. Branch: `*/main` or `*/master`.
+8. Build Steps:
+   - Invoke top-level Maven targets.
+   - Maven Version: `MAVEN_HOME`.
+   - Goals: `clean`.
+   - Add another Maven build step.
+   - Goals: `install`.
+9. Post-build Actions:
+   - Archive artifacts: `target/*.war`.
+   - Build other projects: `MavenWeb_Test`.
+   - Trigger only if build is stable.
+10. Apply → Save.
+
+### Step 2: Create MavenWeb_Test Job
+1. New Item → Name: `MavenWeb_Test`.
+2. Select Freestyle project → OK.
+3. Description: Test demo.
+4. Build Environment → Check Delete workspace before build starts.
+5. Build Steps:
+   - Copy artifacts from another project.
+   - Project name: `MavenWeb_Build`.
+   - Build: Stable build only.
+   - Artifacts to copy: `target/*.war`.
+   - Add Maven build step.
+   - Maven Version: `MAVEN_HOME`.
+   - Goals: `test`.
+6. Post-build Actions:
+   - Archive artifacts: `target/*.war`.
+   - Build other projects: `MavenWeb_Deploy`.
+7. Apply → Save.
+
+### Step 3: Create MavenWeb_Deploy Job
+1. New Item → Name: `MavenWeb_Deploy`.
+2. Select Freestyle project → OK.
+3. Description: Web Code Deployment.
+4. Build Environment → Check Delete workspace before build starts.
+5. Build Steps:
+   - Copy artifacts from another project.
+   - Project name: `MavenWeb_Test`.
+   - Build: Stable build only.
+   - Artifacts to copy: `target/*.war`.
+6. Post-build Actions:
+   - Add Post-build Action → Deploy WAR/EAR to a container.
+   - WAR/EAR File: `target/*.war`.
+   - Context path: `webpath`.
+   - Add Container: Tomcat 9.x Remote.
+   - Credentials: Configure Tomcat username and password using Jenkins Credentials.
+   - Tomcat URL: `http://localhost:8085/` (use your configured Tomcat port).
+7. Apply → Save.
+
+**Important:** Tomcat must be running, and the Tomcat Manager deployment credentials must have the required deployment permissions.
+
+### Step 4: Create MavenWeb_Pipeline View
+1. Jenkins Dashboard → Click `+` beside All.
+2. Enter name: `MavenWeb_Pipeline`.
+3. Select Build Pipeline View.
+4. Click OK/Create.
+5. Layout: Based on upstream/downstream relationship.
+6. Initial Job: `MavenWeb_Build`.
+7. Apply → Save.
+
+### Step 5: Run and Verify
+1. Open MavenWeb_Pipeline.
+2. Click Run on MavenWeb_Build.
+3. Check Console Output for BUILD SUCCESS.
+4. Verify MavenWeb_Test executes automatically.
+5. Verify MavenWeb_Deploy executes automatically.
+6. Check that all jobs are green.
+7. Open Tomcat homepage in another browser tab.
+8. Open Manager App and log in using Tomcat credentials.
+9. Find the deployed application `/webpath`.
+10. Click the application to verify the output.
+
+---
+
+## III. IMPORTANT JENKINS QUESTIONS AND ANSWERS
+
+**1. What is Jenkins primarily used for?**
+
+Jenkins is an open-source automation server used for Continuous Integration (CI) and Continuous Delivery/Deployment (CD). It automates building, testing and deploying applications.
+
+**2. What are the features of Jenkins?**
+
+- Open-source and free.
+- Supports CI/CD.
+- Large number of plugins.
+- Easy integration with Git and Maven.
+- Distributed builds.
+- Automated testing and deployment.
+
+**3. What is the default port of Jenkins?**
+
+Port `8080`.
+
+**4. What can be integrated with Jenkins for version control?**
+
+Git, GitHub, GitLab, Bitbucket and SVN.
+
+**5. What is the purpose of Jenkins plugins?**
+
+Plugins extend Jenkins functionality and allow integration with tools like Git, Maven, Docker, Kubernetes and Tomcat.
+
+**6. Which Jenkins job is suitable for one-off tasks or small scripts?**
+
+Freestyle Project.
+
+**7. How can sensitive information such as API keys be managed in Jenkins?**
+
+Use Jenkins Credentials to securely store passwords, API keys and tokens instead of writing them directly in scripts.
+
+**8. What is Blue Ocean in Jenkins?**
+
+Blue Ocean is a modern Jenkins user interface that provides visual pipeline representation and makes CI/CD pipelines easier to understand.
+
+**9. What does Blue Ocean provide?**
+
+It provides a visual representation of pipeline stages, build status, errors and execution details.
+
+**10. Which Jenkins component allows distributed builds across multiple machines?**
+
+Jenkins Agents (formerly called Slaves). The Jenkins Controller distributes jobs to agents.
+
+**11. List five important Jenkins plugins for microservices CI/CD.**
+
+1. Git Plugin – Connects Jenkins with Git repositories.
+2. Pipeline Plugin – Creates automated CI/CD pipelines.
+3. Docker Plugin – Supports Docker-based builds.
+4. Kubernetes Plugin – Runs Jenkins agents in Kubernetes.
+5. Maven Integration Plugin – Builds Maven projects.
+
+Other useful plugins: JUnit, Credentials Binding, SonarQube Scanner and Deploy to Container.
+
+**12. Explain how to install a plugin in Jenkins.**
+
+1. Open Jenkins Dashboard.
+2. Click Manage Jenkins.
+3. Select Plugins.
+4. Open Available Plugins.
+5. Search for the required plugin.
+6. Select the plugin.
+7. Click Install.
+8. Restart Jenkins if required.
+
+Considerations:
+- Check Jenkins version compatibility.
+- Check plugin dependencies.
+- Prefer stable plugin releases.
+- Update plugins regularly.
+- Take backups before major updates.
+
+**13. Explain plugin installation and compatibility.**
+
+1. Go to Manage Jenkins → Plugins.
+2. Select Available Plugins.
+3. Search and select the required plugin.
+4. Click Install.
+5. Verify successful installation.
+6. Check compatibility with the Jenkins version.
+7. Install required dependencies and restart if needed.
+
+**14. How do you configure a Git Plugin in Jenkins?**
+
+1. Install Git Plugin through Manage Jenkins → Plugins.
+2. Go to Manage Jenkins → Tools.
+3. Configure Git installation if required.
+4. Create a Freestyle project or Pipeline.
+5. Select Source Code Management → Git.
+6. Enter GitHub repository URL.
+7. Add credentials if the repository is private.
+8. Select the correct branch.
+9. Save and Build.
+10. Verify the repository is cloned successfully in Console Output.
+
+**15. What are common Jenkins plugin issues and how do you troubleshoot them?**
+
+Common issues:
+- Dependency conflicts.
+- Plugin version incompatibility.
+- Failed plugin installation.
+- Jenkins startup errors.
+- Authentication problems.
+
+Solutions:
+1. Check Jenkins system logs.
+2. Verify plugin dependencies.
+3. Update incompatible plugins.
+4. Restart Jenkins if required.
+5. Check network connectivity.
+6. Install compatible plugin versions.
+7. Roll back problematic updates if necessary.
+
+---
+
+## IV. SCREENSHOTS TO UPLOAD
+
+**Maven Java:**
+1. MavenJava_Build configuration.
+2. MavenJava_Build successful Console Output.
+3. MavenJava_Test successful Console Output.
+4. MavenJava_Pipeline showing green status.
+5. Archived artifacts.
+
+**Maven Web:**
+1. MavenWeb_Build successful Console Output.
+2. MavenWeb_Test successful Console Output.
+3. MavenWeb_Deploy successful Console Output.
+4. MavenWeb_Pipeline showing green status.
+5. Tomcat Manager showing deployed application.
+6. Application output in browser.
+
+---
+
+## CONCLUSION
+
+In Week 8, we learned how to automate Maven Java and Maven Web projects using Jenkins. We created Build, Test and Deploy jobs, configured pipeline views, archived artifacts and deployed a web application to Tomcat. We also learned about Jenkins plugins, agents, CI/CD and troubleshooting.
+
+**Remember the execution order:**
+
+Maven Java: `MavenJava_Build → MavenJava_Test`
+
+Maven Web: `MavenWeb_Build → MavenWeb_Test → MavenWeb_Deploy`
+
+**Build → Test → Deploy → Verify**
+==================================================================================
+PART C: HANDS-ON PRACTICE – CREATE JENKINS PIPELINE USING SCRIPT
+Step 1: Open Jenkins
+Open http://localhost:8080.
+
+Click New Item.
+
+Step 2: Create Pipeline Job
+Enter project name: MavenJava_Pipeline.
+
+Select Pipeline.
+
+Click OK.
+
+Step 3: General Configuration
+Enter Description:
+Maven Java Pipeline Automation.
+
+Configure Build Triggers if required by the question.
+
+Leave other settings as default.
+
+Step 4: Configure Pipeline Script
+Scroll down to Pipeline.
+
+Definition: Select Pipeline script.
+
+In the Script box, paste the following code.
+
+Step 5: Jenkins Pipeline Script
+Replace the GitHub URL with your actual Maven Java repository URL.
+
+pipeline {
+    agent any
+
+    tools {
+        maven 'MAVEN-HOME'
+    }
+
+    stages {
+
+        stage('Git Repo & Clean') {
+            steps {
+                bat 'git clone https://github.com/USERNAME/REPOSITORY.git mavenjava'
+                bat 'mvn clean -f mavenjava'
+            }
+        }
+
+        stage('Install') {
+            steps {
+                bat 'mvn install -f mavenjava'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                bat 'mvn test -f mavenjava'
+            }
+        }
+
+        stage('Package') {
+            steps {
+                bat 'mvn package -f mavenjava'
+            }
+        }
+    }
+}
+
+
